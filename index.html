@@ -3,25 +3,501 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>📅 日历应用</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .controls {
             display: flex;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .hello {
-            font-size: 72px;
+
+        .controls select, .controls input {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .controls select:focus, .controls input:focus {
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .calendar {
+            padding: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h2 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .weekday {
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+            padding: 10px;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .day:hover {
+            background: #e8e9ff;
+        }
+
+        .day.today {
+            background: #667eea;
+            color: white;
+        }
+
+        .day.selected {
+            background: #764ba2;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .day.has-event::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            width: 8px;
+            height: 8px;
+            background: #ff6b6b;
+            border-radius: 50%;
+        }
+
+        .day.empty {
+            background: transparent;
+            cursor: default;
+        }
+
+        .day.empty:hover {
+            background: transparent;
+        }
+
+        .events {
+            padding: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .events h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .event-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .event-item .date {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .event-item .content {
+            color: #555;
+        }
+
+        .no-events {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <div class="hello">hello</div>
+    <div class="container">
+        <div class="header">
+            <h1>📅 日历应用</h1>
+            <p>管理您的日程和事件</p>
+        </div>
+
+        <div class="controls">
+            <select id="yearSelect"></select>
+            <select id="monthSelect"></select>
+            <button class="btn" onclick="goToToday()">今天</button>
+            <button class="btn" onclick="openAddModal()">+ 添加事件</button>
+        </div>
+
+        <div class="calendar">
+            <div class="calendar-header">
+                <h2 id="calendarTitle"></h2>
+            </div>
+            <div class="weekdays">
+                <div class="weekday">日</div>
+                <div class="weekday">一</div>
+                <div class="weekday">二</div>
+                <div class="weekday">三</div>
+                <div class="weekday">四</div>
+                <div class="weekday">五</div>
+                <div class="weekday">六</div>
+            </div>
+            <div class="days" id="daysContainer"></div>
+        </div>
+
+        <div class="events">
+            <h3 id="eventsTitle">本月事件</h3>
+            <div id="eventsContainer"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="addEventModal">
+        <div class="modal-content">
+            <h3>添加事件</h3>
+            <input type="date" id="eventDate">
+            <input type="text" id="eventText" placeholder="输入事件内容">
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn" onclick="addEvent()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 状态管理
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth() + 1;
+        let events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+
+        // 初始化
+        function init() {
+            populateYearSelect();
+            populateMonthSelect();
+            document.getElementById('yearSelect').value = currentYear;
+            document.getElementById('monthSelect').value = currentMonth;
+            renderCalendar();
+
+            // 事件监听
+            document.getElementById('yearSelect').addEventListener('change', (e) => {
+                currentYear = parseInt(e.target.value);
+                renderCalendar();
+            });
+
+            document.getElementById('monthSelect').addEventListener('change', (e) => {
+                currentMonth = parseInt(e.target.value);
+                renderCalendar();
+            });
+        }
+
+        // 填充年份选择
+        function populateYearSelect() {
+            const select = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year + '年';
+                select.appendChild(option);
+            }
+        }
+
+        // 填充月份选择
+        function populateMonthSelect() {
+            const select = document.getElementById('monthSelect');
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月',
+                           '7月', '8月', '9月', '10月', '11月', '12月'];
+            months.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index + 1;
+                option.textContent = month;
+                select.appendChild(option);
+            });
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            const daysContainer = document.getElementById('daysContainer');
+            const title = document.getElementById('calendarTitle');
+
+            title.textContent = `${currentYear}年 ${currentMonth}月`;
+
+            const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const today = new Date();
+
+            daysContainer.innerHTML = '';
+
+            // 填充空白
+            for (let i = 0; i < firstDay; i++) {
+                const day = document.createElement('div');
+                day.className = 'day empty';
+                daysContainer.appendChild(day);
+            }
+
+            // 填充日期
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day';
+                dayEl.textContent = day;
+
+                const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                // 检查是否是今天
+                if (today.getFullYear() === currentYear &&
+                    today.getMonth() + 1 === currentMonth &&
+                    today.getDate() === day) {
+                    dayEl.classList.add('today');
+                }
+
+                // 检查是否有事件
+                if (events[dateStr] && events[dateStr].length > 0) {
+                    dayEl.classList.add('has-event');
+                }
+
+                dayEl.addEventListener('click', () => {
+                    showDayEvents(dateStr);
+                });
+
+                daysContainer.appendChild(dayEl);
+            }
+
+            renderEvents();
+        }
+
+        // 渲染事件列表
+        function renderEvents() {
+            const container = document.getElementById('eventsContainer');
+            const monthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+            container.innerHTML = '';
+
+            let hasEvents = false;
+
+            for (let day = 1; day <= 31; day++) {
+                const dateStr = `${monthKey}-${String(day).padStart(2, '0')}`;
+                if (events[dateStr] && events[dateStr].length > 0) {
+                    hasEvents = true;
+                    events[dateStr].forEach(event => {
+                        const eventEl = document.createElement('div');
+                        eventEl.className = 'event-item';
+                        eventEl.innerHTML = `
+                            <div class="date">${dateStr}</div>
+                            <div class="content">${event}</div>
+                        `;
+                        container.appendChild(eventEl);
+                    });
+                }
+            }
+
+            if (!hasEvents) {
+                container.innerHTML = '<div class="no-events">本月暂无事件</div>';
+            }
+        }
+
+        // 显示特定日期的事件
+        function showDayEvents(dateStr) {
+            const container = document.getElementById('eventsContainer');
+            document.getElementById('eventsTitle').textContent = `${dateStr} 的事件`;
+            container.innerHTML = '';
+
+            if (events[dateStr] && events[dateStr].length > 0) {
+                events[dateStr].forEach(event => {
+                    const eventEl = document.createElement('div');
+                    eventEl.className = 'event-item';
+                    eventEl.innerHTML = `
+                        <div class="date">${dateStr}</div>
+                        <div class="content">${event}</div>
+                    `;
+                    container.appendChild(eventEl);
+                });
+            } else {
+                container.innerHTML = '<div class="no-events">当天暂无事件</div>';
+            }
+        }
+
+        // 打开添加事件模态框
+        function openAddModal() {
+            const modal = document.getElementById('addEventModal');
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventText').value = '';
+            modal.classList.add('show');
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('addEventModal').classList.remove('show');
+        }
+
+        // 添加事件
+        function addEvent() {
+            const date = document.getElementById('eventDate').value;
+            const text = document.getElementById('eventText').value.trim();
+
+            if (!date || !text) {
+                alert('请填写日期和事件内容');
+                return;
+            }
+
+            if (!events[date]) {
+                events[date] = [];
+            }
+
+            events[date].push(text);
+            localStorage.setItem('calendarEvents', JSON.stringify(events));
+
+            closeModal();
+            renderCalendar();
+        }
+
+        // 跳转到今天
+        function goToToday() {
+            const today = new Date();
+            currentYear = today.getFullYear();
+            currentMonth = today.getMonth() + 1;
+            document.getElementById('yearSelect').value = currentYear;
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('eventsTitle').textContent = '本月事件';
+            renderCalendar();
+        }
+
+        // 启动应用
+        init();
+    </script>
 </body>
 </html>
